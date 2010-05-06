@@ -14,15 +14,24 @@
 //@synthesize lines, artist, title;
 @synthesize webView;
 
-- (id)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
+
+- (id)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier height:(CGFloat)height{
     if (self = [super initWithStyle:style reuseIdentifier:reuseIdentifier]) {
-        webView = [[[UIWebView alloc] initWithFrame:CGRectMake(0, 0, 320, 90)] autorelease];
+        webView = [[[UIWebView alloc] initWithFrame:CGRectMake(0, 0, 320, height)] autorelease];
 		[webView setDelegate:self];
-		//[webView setBackgroundColor:[UIColor blueColor]];
 		[self addSubview:webView];
     }
     return self;
 }
+
+//- (UIWebView*) getWebView{
+//	return self.webView;
+//}
+//
+//
+//- (void) setWebView:(UIWebView*)webViewToUse{
+//	self.webView = webViewToUse;
+//}
 
 //		mainLabel = [[[UILabel alloc] initWithFrame:CGRectMake(0.0, 0.0, 220.0, 15.0)] autorelease];
 //        mainLabel.tag = MAINLABEL_TAG;
@@ -47,14 +56,18 @@
 }
 
 - (void)webViewDidFinishLoad:(UIWebView *)webView{
-	NSLog(@"web view did finish download, size is %f", webView.frame.size.height);
+	//NSLog(@"web view did finish download, size is %f", webView.frame.size.height);
 }
 
 //-(UIWebView *)getWebView{
 	
 
 - (void)setLabelText:(NSString *)_text;{
+	//struct CGSize size;
+	//size = [_text sizeWithFont:[UIFont fontWithName:@"Helvetica" size:14] constrainedToSize:CGSizeMake(300.0, 300.0) lineBreakMode:UILineBreakModeCharacterWrap];
+	//NSLog(@"called heightForRowAtIndexPath, returend %f", (size.height +50.0f)); 
 	//NSLog(@"text is %@", _text);
+	//[webView setFrame:CGRectMake(0, 0, 320, (size.height +50.0f))];
 	[webView loadHTMLString:_text baseURL:nil];
 	[webView sizeToFit];
 }

@@ -8,16 +8,21 @@
 
 #import <UIKit/UIKit.h>
 #import "TableCellView.h"
+#import "HtmlBuilder.h"
 
 
 @interface rhymeTimeIPhoneUIViewController : UIViewController {
 	
 	IBOutlet UITableView *searchResultTableView;
-	NSArray *searchResult;
+	NSArray *searchResult;	
+	NSArray *webViewDelegates;
+	HtmlBuilder* htmlBuilder;
 }
 
 @property (nonatomic, retain) IBOutlet UITableView *searchResultTableView;
 @property (nonatomic, retain) NSArray *searchResult;
+@property (nonatomic, retain) NSArray *webViewDelegates;
+@property (nonatomic, retain) HtmlBuilder *htmlBuilder;
 
 @end
 

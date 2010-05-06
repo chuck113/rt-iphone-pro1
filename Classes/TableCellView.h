@@ -21,6 +21,7 @@
 @property (nonatomic, retain) UIWebView* webView;
 
 - (void)setLabelText:(NSString *)_text;
+- (id)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier height:(CGFloat)height;
 //- (void)setLinesText:(NSString *)_lines;
 //- (void)setArtistText:(NSString *)_artist;
 //- (void)setTitleText:(NSString *)_title;

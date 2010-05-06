@@ -8,6 +8,7 @@
 
 #import "rhymeTimeIPhoneUIViewController.h"
 #import "rhymeTimeIPhoneUIAppDelegate.h"
+#import "WebViewDelegate.h"
 #import "TableCellView.h"
 #import "RhymePart.h"
 #import "Song.h"
@@ -17,8 +18,8 @@
 
 @interface rhymeTimeIPhoneUIViewController()
 
-- (NSString *)buildHtml;
 - (NSArray*)findRhymes:(NSString *)toFind;
+- (CGFloat)heightOfString:(NSString *)string;
 
 @end
 
@@ -27,7 +28,54 @@
 
 @synthesize searchResultTableView;
 @synthesize searchResult;
+@synthesize webViewDelegates;
+@synthesize htmlBuilder;
 
+//- (NSArray*)makeResultWebViews:(NSArray*)searchResults{
+//	
+//	NSMutableArray* result = [[NSMutableArray alloc] init];
+//	
+//	for(RhymePart* part in searchResults){
+//		UIWebView* webView = [[[UIWebView alloc] initWithFrame:CGRectMake(0, 0, 320, 150)] autorelease];
+//		WebViewDelegate *webViewDelegate = [[WebViewDelegate alloc] initWithWebViewAndLines:webView lines:part.rhymeLines];
+//		[webView setDelegate:webViewDelegate];
+//		NSString* html = [self buildHtml:part];
+//		NSLog(@"setting html to %@", html);
+//		[webView loadHTMLString:html baseURL:nil];
+//		[result addObject:webViewDelegate];
+//	}
+//	NSLog(@"makeResultWebViews built %i results", result.count);
+//	//[result dealloc];
+//	return [NSArray arrayWithArray:result];
+//	
+//}
+
+- (void)reloadTableData{
+	NSLog(@"Reloading data...");
+	[self.searchResultTableView reloadData];
+}
+
+- (void)blockUntilWebViewsAreLoaded:(NSArray*)delegates{
+	[self performSelector:@selector(reloadTableData) withObject:nil afterDelay:1.0];
+    
+	//BOOL allDone = FALSE;
+//	
+//	while(!allDone){
+//		[NSThread sleepForTimeInterval:1.0];
+//		BOOL allComplete = TRUE;
+//		for(WebViewDelegate* del in delegates){
+//			NSLog(@"is done: %@", del.loaded);
+//			if(!del.loaded){
+//				allComplete = FALSE;
+//				break;
+//			}
+//		}
+//		
+//		if(allComplete){
+//			allDone = TRUE;
+//		}
+//	}
+}
 
 - (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar {
 	NSLog(@"search button pressed");
@@ -37,23 +85,12 @@
 	
 	self.searchResult = [self findRhymes:searchBar.text];
 	
+	//self.webViewDelegates = [self makeResultWebViews:self.searchResult];
+	//[self blockUntilWebViewsAreLoaded:self.webViewDelegates];
 	// Tell the UITableView to reload its data.
-	[self.searchResultTableView reloadData];
+	
+	[self reloadTableData];
 }
-
-- (NSArray *)deSerializeArray:(NSString*)string{
-	return [string componentsSeparatedByString:@"%%%"];
-}
-
-//-(NSArray *)deSerializeResult:(NSArray *)items{
-//	NSMutableArray *buffer = [[NSMutableArray alloc] initWithCapacity:items.count];
-//	
-//	for (int i = 0; i<items.count;i++) {
-//		buffer[i] = [self deSerializeArray:items[i]];
-//	}
-//	
-//	return [[NSArray alloc] initWithArray:buffer];
-//}
 
 /**
  *	returns an array of rhymeParts
@@ -69,7 +106,8 @@
 											  inManagedObjectContext:managedObjectContext];
 	[fetchRequest setEntity:entity];
 	
-	NSPredicate *predicate = [NSPredicate predicateWithFormat:@"word contains[cd] %@", toFind];
+	//NSPredicate *predicate = [NSPredicate predicateWithFormat:@"word contains[cd] %@", toFind];
+	NSPredicate *predicate = [NSPredicate predicateWithFormat:@"word like[cd] %@", toFind];
 	[fetchRequest setPredicate:predicate];
 	
 	NSError *error;
@@ -96,12 +134,12 @@
 	for(int i = 0; i < resultsToShow; i++){
 		[resultArray addObject:[items objectAtIndex:i]];
 	}
+	
 	//RhymePart * found = (RhymePart *)[items objectAtIndex:0];
 	
 	NSLog(@"result array has %i entreis", resultArray.count);
 	
 	return [[NSArray alloc] initWithArray:resultArray];
-
 }
 
 /*
@@ -122,20 +160,22 @@
 
 
 
+/*
+ // Override to allow orientations other than the default portrait orientation.
+ - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
+ // Return YES for supported orientations
+ return (interfaceOrientation == UIInterfaceOrientationPortrait);
+ }
+ */
+
+
 // Implement viewDidLoad to do additional setup after loading the view, typically from a nib.
 - (void)viewDidLoad {
     [super viewDidLoad];
+	self.htmlBuilder = [HtmlBuilder alloc];
 }
 
 
-
-/*
-// Override to allow orientations other than the default portrait orientation.
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
-    // Return YES for supported orientations
-    return (interfaceOrientation == UIInterfaceOrientationPortrait);
-}
-*/
 
 #pragma mark Table view methods
 
@@ -150,200 +190,42 @@
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
-	NSLog(@"called heightForRowAtIndexPath, returend 300"); 
-	return 120;
+	//NSLog(@"called heightForRowAtIndexPath, returend %f", [[self.webViewDelegates objectAtIndex:indexPath.row] height]); 
+	//return [[self.webViewDelegates objectAtIndex:indexPath.row] height];
+	RhymePart* rhymePart = (RhymePart*)[self.searchResult objectAtIndex:indexPath.row];
+	return [self heightOfString:rhymePart.rhymeLines];
+	//return 1.0f;
+}
+
+- (CGFloat)heightOfString:(NSString *)string{
+	struct CGSize size;
+	size = [string sizeWithFont:[UIFont fontWithName:@"Helvetica" size:14] constrainedToSize:CGSizeMake(300.0, 300.0) lineBreakMode:UILineBreakModeCharacterWrap];
+	return size.height +50.0f;
 }
 
 // Customize the appearance of table view cells.
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
 	
     static NSString *CellIdentifier = @"RTIdentifier";
-	
-	TableCellView *cell = (TableCellView *)[tableView dequeueReusableCellWithIdentifier:CellIdentifier];
-	NSLog(@"Creating new cell");
-	if(cell == nil) {
-		cell = [[[TableCellView alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier] autorelease];
-	}
-	
 	RhymePart* rhymePart = (RhymePart*)[searchResult objectAtIndex:indexPath.row];
+	CGFloat height = [self heightOfString:rhymePart.rhymeLines];
+	NSLog(@"getting cell for %i for lines %@", indexPath.row, rhymePart.rhymeLines);
+
+	TableCellView *cell = (TableCellView *)[tableView dequeueReusableCellWithIdentifier:CellIdentifier];
+	//if(cell == nil) {
+		cell = [[[TableCellView alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier height:height] autorelease];
+	NSLog(@"built cell");
+	//}
+
 	
-	NSString* html = [self buildHtml:rhymePart];
+	NSString* html = [htmlBuilder buildHtml:rhymePart];
 		
 	[cell setLabelText:html];
 	
-	NSLog(@"setting cell %i to %@", indexPath.row, html);
+	//NSLog(@"setting cell %i to %@", indexPath.row, html);
 	
 	return cell;
 }
-
-- (NSString *)buildLines:(NSArray *)lines{
-	NSMutableString* ms = [[NSMutableString alloc] initWithString:@""];
-	
-	for(int i = 0; i < lines.count-1; i++){
-		[ms appendString:[lines objectAtIndex:i]];
-		[ms appendString:@" / "];
-	}
-	[ms appendString:[lines objectAtIndex:(lines.count -1)]];
-	return [[NSString alloc] initWithString:ms];
-}
-
-- (NSString *)removePunctuation:(NSString *)line{
-	return [line stringByTrimmingCharactersInSet:[NSCharacterSet punctuationCharacterSet]];
-}
-
-- (NSString *)applyFormatToRhymeParts:(NSString *)lines parts:(NSArray *)parts prefix:(NSString  *)prefix suffix:(NSString *)suffix{
-	NSSet* partSet = [[NSSet alloc] initWithArray:parts];
-	NSArray* words = [lines componentsSeparatedByString:@" "];
-	NSMutableArray* wordBuffer = [[NSMutableArray alloc] init];
-	
-	for(int i=0; i<words.count; i++){
-		NSString* word = [words objectAtIndex:i];
-		if([partSet containsObject:[self removePunctuation:[word uppercaseString]]]){
-			[wordBuffer addObject:[NSString stringWithFormat:@"%@%@%@ ", prefix, word, suffix]];
-		}else{
-			[wordBuffer addObject:[NSString stringWithFormat:@"%@ ", word]]; //TODO remove trailing space
-		}
-	}
-		
-	NSMutableString* stringBuffer = [[NSMutableString alloc] init];
-	for(NSString* word in wordBuffer){
-		[stringBuffer appendString:word];
-	}
-		
-	[wordBuffer dealloc];
-	return [NSString stringWithString:stringBuffer];
-}
-
-- (NSString *)testHtml{
-	NSMutableString* ms = [[NSMutableString alloc] initWithString:@"<html><head><title>/title></head><body>"];
-	[ms appendString:@"<p>I pour a hieneken <b>brew</b> to my dececed <b>crew</b> in memory lane</p>"];
-	[ms appendString:@"<p>NAS - Memory Lane</p>"];
-	return [[NSString alloc] initWithString:ms];
-}
-
-
-- (NSString *)buildHtml:(RhymePart*)rhymePart{
-	// convet to constants: static NSString *const HTTP_METHOD_POST = @"POST";
-	NSString* linesStyle = [NSString stringWithString:@"style=\"font-family:Helvetica\""];
-	NSString* lineOpenPara = [NSString stringWithFormat:@"<p %@>", linesStyle];
-	NSString* artistStyle = [NSString stringWithString:@"style=\"text-align:right;font-family:Arial;font-size:12px;color:darkblue\""];
-	NSString* artistOpenPara = [NSString stringWithFormat:@"<p %@>", artistStyle];
-	
-	//rhymePart.rhymeLines
-	//rhymePart.rhymeParts
-	NSString* title = rhymePart.song.title;
-	NSLog(@"title is %@", title);
-	NSString* artist = rhymePart.song.album.artist.name;
-	NSLog(@"artist is %@", artist);
-
-	NSString *artistAndTite = [NSString stringWithFormat:@"%@ - %@", [artist uppercaseString], title];
-	
-	NSArray *parts = [self deSerializeArray:[rhymePart rhymeParts]];
-	NSArray *lines = [self deSerializeArray:[rhymePart rhymeLines]];
-
-	NSLog(@"lines are %@", [self buildLines:lines]);
-
-	
-	NSMutableString* ms = [[NSMutableString alloc] initWithString:@"<html><head><title>/title></head><body>"];
-	NSString* line = [self buildLines:lines];
-	
-	NSString* linesWithFormatting = [self applyFormatToRhymeParts:line parts:parts prefix:@"<b>" suffix:@"</b>"];
-	NSLog(@"linesWithFormatting: %@", linesWithFormatting);
-	[ms appendString: [NSString stringWithFormat:@"%@%@</p>", lineOpenPara, linesWithFormatting]];
-	[ms appendString: [NSString stringWithFormat:@"%@%@</p>", artistOpenPara, artistAndTite]];
-	[ms appendString:@"</body></html>"];
-	NSString *result =  [[NSString alloc] initWithString:ms];
-	[ms dealloc];
-	return result;
-}
-
-//#define MAINLABEL_TAG 1
-//#define SECONDLABEL_TAG 2
-//
-//
-//// Customize the appearance of table view cells.
-//- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-//    
-//	static NSString *CellIdentifier = @"ImageOnRightCell";
-//	
-//    UILabel *mainLabel, *secondLabel;
-//
-//    
-//    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
-//    if (cell == nil) {
-//        cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier] autorelease];
-//    
-//		mainLabel = [[[UILabel alloc] initWithFrame:CGRectMake(0.0, 0.0, 220.0, 15.0)] autorelease];
-//        mainLabel.tag = MAINLABEL_TAG;
-//        mainLabel.font = [UIFont systemFontOfSize:14.0];
-//        mainLabel.textAlignment = UITextAlignmentRight;
-//        mainLabel.textColor = [UIColor blackColor];
-//        mainLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleHeight;
-//        [cell.contentView addSubview:mainLabel];
-//		
-//        secondLabel = [[[UILabel alloc] initWithFrame:CGRectMake(0.0, 20.0, 220.0, 25.0)] autorelease];
-//        secondLabel.tag = SECONDLABEL_TAG;
-//        secondLabel.font = [UIFont systemFontOfSize:12.0];
-//        secondLabel.textAlignment = UITextAlignmentRight;
-//        secondLabel.textColor = [UIColor darkGrayColor];
-//        secondLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleHeight;
-//        [cell.contentView addSubview:secondLabel];
-//	}
-//	
-//	//NSDictionary *aDict = [self.list objectAtIndex:indexPath.row];
-//    mainLabel.text = @"here is some rap words that go on / for a bit, hope if fits well";//[aDict objectForKey:@"mainTitleKey"];
-//    secondLabel.text = @"from an artist - song title";//[aDict objectForKey:@"secondaryTitleKey"];
-//    
-//	// Configure the cell.
-//	//cell.textLabel.text = [self.drinks objectAtIndex:indexPath.row];
-//
-//    return cell;
-//}
-
-
-
-/*
- // Override to support row selection in the table view.
- - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
- 
- // Navigation logic may go here -- for example, create and push another view controller.
- // AnotherViewController *anotherViewController = [[AnotherViewController alloc] initWithNibName:@"AnotherView" bundle:nil];
- // [self.navigationController pushViewController:anotherViewController animated:YES];
- // [anotherViewController release];
- }
- */
-
-
-/*
- // Override to support conditional editing of the table view.
- - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
- // Return NO if you do not want the specified item to be editable.
- return YES;
- }
- */
-
-
-/*
- // Override to support editing the table view.
- - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
- 
- if (editingStyle == UITableViewCellEditingStyleDelete) {
- // Delete the row from the data source.
- [tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationFade];
- }   
- else if (editingStyle == UITableViewCellEditingStyleInsert) {
- // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view.
- }   
- }
- */
-
-
-/*
- // Override to support rearranging the table view.
- - (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndexPath toIndexPath:(NSIndexPath *)toIndexPath {
- }
- */
-
 
 - (void)didReceiveMemoryWarning {
 	// Releases the view if it doesn't have a superview.
