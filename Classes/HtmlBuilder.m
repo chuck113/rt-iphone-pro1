@@ -25,6 +25,7 @@
 	return [line stringByTrimmingCharactersInSet:[NSCharacterSet punctuationCharacterSet]];
 }
 
+//FIXME does not apply formatting to rhymes such as 'me' that rhyme with B.I.G - needs to break down words
 - (NSString *)applyFormatToRhymeParts:(NSString *)lines parts:(NSArray *)parts prefix:(NSString  *)prefix suffix:(NSString *)suffix{
 	NSSet* partSet = [[NSSet alloc] initWithArray:parts];
 	NSArray* words = [lines componentsSeparatedByString:@" "];
@@ -63,9 +64,9 @@
 - (NSString *)buildHtml:(RhymePart*)rhymePart{
 	// convet to constants: static NSString *const HTTP_METHOD_POST = @"POST";
 	NSString* linesStyle = [NSString stringWithString:@"style=\"font-family:Helvetica;font-size:14px\""];
-	NSString* lineOpenPara = [NSString stringWithFormat:@"<p %@>", linesStyle];
+	NSString* lineOpenPara = [NSString stringWithFormat:@"<div id=\"lines\" %@>", linesStyle];
 	NSString* artistStyle = [NSString stringWithString:@"style=\"text-align:right;font-family:Arial;font-size:12px;color:darkblue\""];
-	NSString* artistOpenPara = [NSString stringWithFormat:@"<p %@>", artistStyle];
+	NSString* artistOpenPara = [NSString stringWithFormat:@"<div id=\"title\" %@>", artistStyle];
 	
 	//rhymePart.rhymeLines
 	//rhymePart.rhymeParts
@@ -87,8 +88,8 @@
 	
 	NSString* linesWithFormatting = [self applyFormatToRhymeParts:line parts:parts prefix:@"<b>" suffix:@"</b>"];
 	//NSLog(@"linesWithFormatting: %@", linesWithFormatting);
-	[ms appendString: [NSString stringWithFormat:@"%@%@</p>", lineOpenPara, linesWithFormatting]];
-	[ms appendString: [NSString stringWithFormat:@"%@%@</p>", artistOpenPara, artistAndTite]];
+	[ms appendString: [NSString stringWithFormat:@"%@%@</div>", lineOpenPara, linesWithFormatting]];
+	[ms appendString: [NSString stringWithFormat:@"%@%@</div>", artistOpenPara, artistAndTite]];
 	[ms appendString:@"</body></html>"];
 	NSString *result =  [[NSString alloc] initWithString:ms];
 	[ms dealloc];

@@ -12,7 +12,7 @@
 @implementation TableCellView
 
 //@synthesize lines, artist, title;
-@synthesize webView;
+@synthesize webView, rawText;
 
 
 - (id)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier height:(CGFloat)height{
@@ -55,8 +55,21 @@
     [super dealloc];
 }
 
-- (void)webViewDidFinishLoad:(UIWebView *)webView{
-	//NSLog(@"web view did finish download, size is %f", webView.frame.size.height);
+- (void)webViewDidFinishLoad:(UIWebView *)theView{
+	NSLog(@"web view did finish download, size is %f for %@", theView.frame.size.height, rawText);
+	[self heightOfString:rawText];
+	//NSLog(@"raw text size is %f", [self heightOfString:rawText]);
+	NSLog(@"lines Client height: %@", [theView stringByEvaluatingJavaScriptFromString: @"document.getElementById('lines').clientHeight"] );
+	NSLog(@"lines Client height: %@", [theView stringByEvaluatingJavaScriptFromString: @"document.getElementById('title').clientHeight"] );
+}
+
+// TODO needs refinement
+- (CGFloat)heightOfString:(NSString *)string{
+	NSString* stringWithPadding = [NSString stringWithFormat:@"%@%@", string, @""];
+	struct CGSize size;
+	size = [stringWithPadding sizeWithFont:[UIFont fontWithName:@"Helvetica-Bold" size:14] constrainedToSize:CGSizeMake(320.0, 320.0) lineBreakMode:UILineBreakModeCharacterWrap];
+	NSLog(@"heightOfString %f for %@", size.height, string); 
+	return size.height;
 }
 
 //-(UIWebView *)getWebView{

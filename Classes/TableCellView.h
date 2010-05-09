@@ -15,10 +15,12 @@
 	//IBOutlet UILabel *artist;
 	//IBOutlet UILabel *title;
 
+	NSString *rawText;
 	UIWebView *webView;
 }
 
 @property (nonatomic, retain) UIWebView* webView;
+@property (nonatomic, retain) NSString* rawText;
 
 - (void)setLabelText:(NSString *)_text;
 - (id)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier height:(CGFloat)height;
