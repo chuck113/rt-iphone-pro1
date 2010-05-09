@@ -21,6 +21,7 @@
 - (NSArray*)findRhymes:(NSString *)toFind;
 - (CGFloat)heightOfString:(NSString *)string;
 -(NSArray *)buildResultsArray:(NSArray *)items maxResults:(double)maxResults;
+-(NSArray *)buildResultCells:(NSArray *)results;
 
 @end
 
@@ -31,6 +32,8 @@
 @synthesize searchResult;
 @synthesize webViewDelegates;
 @synthesize htmlBuilder;
+
+@synthesize cellCache;
 
 
 - (void)reloadTableData{
@@ -49,6 +52,7 @@
 	[searchBar resignFirstResponder];
 	
 	self.searchResult = [self findRhymes:searchBar.text];
+	self.cellCache = [self buildResultCells:self.searchResult];
 
 	// Tell the UITableView to reload its data.	
 	[self reloadTableData];
@@ -109,6 +113,20 @@
 	NSArray* result = [NSArray arrayWithArray:resultArray];
 	[resultArray dealloc];
 	return result;
+}
+
+-(NSArray *)buildResultCells:(NSArray *)results{
+	NSMutableArray* cellBuffer = [NSMutableArray array];
+	for(RhymePart* part in results){
+		//TODO do we need to pass height in here?
+		CGFloat height = [self heightOfString:part.rhymeLines];
+		TableCellView* cell = [[[TableCellView alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"NEVER" height:height] autorelease];
+		NSString* html = [htmlBuilder buildHtml:part];
+		[cell setLabelText:html];
+		[cellBuffer addObject:cell];
+	}
+	
+	return[NSArray arrayWithArray:cellBuffer];
 }
 
 /*
@@ -176,27 +194,7 @@
 
 // Customize the appearance of table view cells.
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-	
-    
-	RhymePart* rhymePart = (RhymePart*)[searchResult objectAtIndex:indexPath.row];
-	CGFloat height = [self heightOfString:rhymePart.rhymeLines];
-	NSLog(@"getting cell for %i for lines %@", indexPath.row, rhymePart.rhymeLines);
-	NSString *CellIdentifier = [NSString stringWithFormat:@"RTIdentifier-%i", (int)height];
-	
-	TableCellView *cell = (TableCellView *)[tableView dequeueReusableCellWithIdentifier:CellIdentifier];
-	if(cell == nil) {
-		cell = [[[TableCellView alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier height:height] autorelease];
-		NSLog(@"built cell");
-	}
-
-	
-	NSString* html = [htmlBuilder buildHtml:rhymePart];
-	cell.rawText = rhymePart.rhymeLines;
-	[cell setLabelText:html];
-	//[cell setNeedsLayout];
-	//NSLog(@"setting cell %i to %@", indexPath.row, html);
-	
-	return cell;
+	return [cellCache objectAtIndex:indexPath.row];
 }
 
 - (void)didReceiveMemoryWarning {
