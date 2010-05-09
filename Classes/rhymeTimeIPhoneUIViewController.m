@@ -20,6 +20,7 @@
 
 - (NSArray*)findRhymes:(NSString *)toFind;
 - (CGFloat)heightOfString:(NSString *)string;
+-(NSArray *)buildResultsArray:(NSArray *)items maxResults:(double)maxResults;
 
 @end
 
@@ -122,24 +123,34 @@
         return [NSArray init];
     }
 	
-	
-	double resultsToShowDouble = fmin(10.0, [[[NSNumber alloc] initWithInt:items.count] doubleValue]);
-	NSLog(@"will show %f results", resultsToShowDouble);
+	return [self buildResultsArray:items maxResults:20.0];
+}
 
+-(NSArray *)buildResultsArray:(NSArray *)items maxResults:(double)maxResults{
+	double resultsToShowDouble = fmin(maxResults, [[[NSNumber alloc] initWithInt:items.count] doubleValue]);
+	NSLog(@"will show %f results", resultsToShowDouble);
+	
 	int resultsToShow = [[[NSNumber alloc] initWithDouble:resultsToShowDouble] intValue];
 	NSLog(@"will show %i results", resultsToShow);
 	
 	NSMutableArray* resultArray = [[NSMutableArray alloc] init];
+	NSMutableSet* lines = [NSMutableSet set];
 	
-	for(int i = 0; i < resultsToShow; i++){
-		[resultArray addObject:[items objectAtIndex:i]];
+	for(int i = 0; (i < [items count]) && ([resultArray count] < resultsToShow); i++){
+		RhymePart* part = (RhymePart*)[items objectAtIndex:i];
+		if(![lines containsObject:part.rhymeLines]){
+			[lines addObject:part.rhymeLines];
+			[resultArray addObject:[items objectAtIndex:i]];
+		}
 	}
 	
 	//RhymePart * found = (RhymePart *)[items objectAtIndex:0];
 	
 	NSLog(@"result array has %i entreis", resultArray.count);
 	
-	return [[NSArray alloc] initWithArray:resultArray];
+	NSArray* result = [NSArray arrayWithArray:resultArray];
+	[resultArray dealloc];
+	return result;
 }
 
 /*
@@ -190,13 +201,13 @@
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
-	//NSLog(@"called heightForRowAtIndexPath, returend %f", [[self.webViewDelegates objectAtIndex:indexPath.row] height]); 
+	NSLog(@"called heightForRowAtIndexPath, returend %f", [[self.webViewDelegates objectAtIndex:indexPath.row] height]); 
 	//return [[self.webViewDelegates objectAtIndex:indexPath.row] height];
 	RhymePart* rhymePart = (RhymePart*)[self.searchResult objectAtIndex:indexPath.row];
 	return [self heightOfString:rhymePart.rhymeLines];
-	//return 1.0f;
 }
 
+// TODO needs refinement
 - (CGFloat)heightOfString:(NSString *)string{
 	struct CGSize size;
 	size = [string sizeWithFont:[UIFont fontWithName:@"Helvetica" size:14] constrainedToSize:CGSizeMake(300.0, 300.0) lineBreakMode:UILineBreakModeCharacterWrap];
@@ -212,10 +223,10 @@
 	NSLog(@"getting cell for %i for lines %@", indexPath.row, rhymePart.rhymeLines);
 
 	TableCellView *cell = (TableCellView *)[tableView dequeueReusableCellWithIdentifier:CellIdentifier];
-	//if(cell == nil) {
+	if(cell == nil) {
 		cell = [[[TableCellView alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier height:height] autorelease];
-	NSLog(@"built cell");
-	//}
+		NSLog(@"built cell");
+	}
 
 	
 	NSString* html = [htmlBuilder buildHtml:rhymePart];
