@@ -113,6 +113,10 @@
 }
 
 
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+	NSLog(@"selected row %i", indexPath.row);
+}
+
 #pragma mark -
 #pragma mark Application's Documents directory
 

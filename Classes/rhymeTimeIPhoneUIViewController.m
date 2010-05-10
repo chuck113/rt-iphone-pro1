@@ -8,7 +8,6 @@
 
 #import "rhymeTimeIPhoneUIViewController.h"
 #import "rhymeTimeIPhoneUIAppDelegate.h"
-#import "WebViewDelegate.h"
 #import "TableCellView.h"
 #import "RhymePart.h"
 #import "Song.h"
@@ -26,9 +25,11 @@
 @end
 
 
+@protocol SearchBarCallback;
 @implementation rhymeTimeIPhoneUIViewController
 
 @synthesize searchResultTableView;
+@synthesize searchBar;
 @synthesize searchResult;
 @synthesize webViewDelegates;
 @synthesize htmlBuilder;
@@ -45,13 +46,23 @@
 	[self performSelector:@selector(reloadTableData) withObject:nil afterDelay:1.0];
 }
 
-- (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar {
+-(void)setSearchBarText:(NSString *)text{
+	[searchBar setText:text];
+	
+	self.searchResult = [self findRhymes:text];
+	self.cellCache = [self buildResultCells:self.searchResult];
+	
+	// Tell the UITableView to reload its data.	
+	[self reloadTableData];
+}
+
+- (void)searchBarSearchButtonClicked:(UISearchBar *)searchBarRef {
 	NSLog(@"search button pressed");
 	
 	// Make the keyboard go away.
-	[searchBar resignFirstResponder];
+	[searchBarRef resignFirstResponder];
 	
-	self.searchResult = [self findRhymes:searchBar.text];
+	self.searchResult = [self findRhymes:searchBarRef.text];
 	self.cellCache = [self buildResultCells:self.searchResult];
 
 	// Tell the UITableView to reload its data.	
@@ -123,10 +134,17 @@
 		TableCellView* cell = [[[TableCellView alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"NEVER" height:height] autorelease];
 		NSString* html = [htmlBuilder buildHtml:part];
 		[cell setLabelText:html];
+		cell.delegate = self;
 		[cellBuffer addObject:cell];
 	}
 	
 	return[NSArray arrayWithArray:cellBuffer];
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+	NSLog(@"selected row %i", indexPath.row);
+
+	[tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
 
 /*

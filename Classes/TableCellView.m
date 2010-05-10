@@ -11,8 +11,9 @@
 
 @implementation TableCellView
 
+
 //@synthesize lines, artist, title;
-@synthesize webView, rawText;
+@synthesize webView, rawText, delegate;
 
 
 - (id)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier height:(CGFloat)height{
@@ -24,22 +25,23 @@
     return self;
 }
 
-//- (UIWebView*) getWebView{
-//	return self.webView;
-//}
-//
-//
-//- (void) setWebView:(UIWebView*)webViewToUse{
-//	self.webView = webViewToUse;
-//}
 
-//		mainLabel = [[[UILabel alloc] initWithFrame:CGRectMake(0.0, 0.0, 220.0, 15.0)] autorelease];
-//        mainLabel.tag = MAINLABEL_TAG;
-//        mainLabel.font = [UIFont systemFontOfSize:14.0];
-//        mainLabel.textAlignment = UITextAlignmentRight;
-//        mainLabel.textColor = [UIColor blackColor];
-//        mainLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleHeight;
-//        [cell.contentView addSubview:mainLabel];
+- (BOOL)webView:(UIWebView*)webView shouldStartLoadWithRequest:(NSURLRequest*)request navigationType:(UIWebViewNavigationType)navigationType {
+	NSLog(@"got request %@", [[request URL]absoluteString]);
+	NSLog(@"got request base %@", [[request URL]baseURL]);
+	
+	if([[[request URL]absoluteString] isEqualToString:@"about:blank"]){
+		return TRUE;
+	}else{
+	
+		NSArray* elements = [[[request URL] path] componentsSeparatedByString:@"/"];
+		NSString* lastPathElement = [elements lastObject];
+		NSLog(@"lastPathElement %@", lastPathElement);
+	
+		[self.delegate setSearchBarText:lastPathElement];
+		return FALSE;
+	}
+}
 
 
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated {
@@ -81,6 +83,7 @@
 	//NSLog(@"called heightForRowAtIndexPath, returend %f", (size.height +50.0f)); 
 	//NSLog(@"text is %@", _text);
 	//[webView setFrame:CGRectMake(0, 0, 320, (size.height +50.0f))];
+	//[webView loadHTMLString:_text baseURL:[NSURL URLWithString:@"rhymetime://local/setHtml"]];
 	[webView loadHTMLString:_text baseURL:nil];
 	[webView sizeToFit];
 }
